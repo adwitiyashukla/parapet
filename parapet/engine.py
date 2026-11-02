@@ -51,7 +51,7 @@ def run_rules(inventory: Inventory, config: Config, now: datetime | None = None)
                 message=outcome.message,
                 remediation=rule.remediation,
                 cis=list(rule.cis),
-                fsbp=list(rule.fsbp),
+                security_hub=list(rule.security_hub),
                 address=resource.address or resource.arn,
             )
             suppression = match_suppression(finding, resource, active_suppressions)

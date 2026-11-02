@@ -34,7 +34,7 @@ def make_finding(rule_id="S3-001", severity=Severity.HIGH, status="fail"):
         message="m",
         remediation="r",
         cis=["2.1.4"],
-        fsbp=["S3.8"],
+        security_hub=["S3.8"],
         status=status,
     )
 

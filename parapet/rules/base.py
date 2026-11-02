@@ -27,7 +27,7 @@ class Rule:
     resource_types: tuple = ()
     sources: tuple = ("aws", "terraform")
     cis: tuple = ()
-    fsbp: tuple = ()
+    security_hub: tuple = ()
     remediation = ""
 
     def __init__(self, settings: dict | None = None, now: datetime | None = None):
@@ -59,6 +59,6 @@ class Rule:
             "resource_types": list(self.resource_types),
             "sources": list(self.sources),
             "cis": list(self.cis),
-            "fsbp": list(self.fsbp),
+            "security_hub": list(self.security_hub),
             "remediation": self.remediation,
         }

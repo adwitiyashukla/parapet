@@ -9,7 +9,7 @@ class ConfigRecorder(Rule):
     resource_types = ("aws_config_configuration_recorder",)
     sources = ("aws",)
     cis = ("3.3",)
-    fsbp = ("Config.1",)
+    security_hub = ("Config.1",)
     remediation = "Create a configuration recorder with a delivery channel in every region in use and start it."
 
     def check(self, resource, inventory):

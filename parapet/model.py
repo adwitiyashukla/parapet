@@ -103,7 +103,7 @@ class Finding:
     message: str
     remediation: str
     cis: list
-    fsbp: list
+    security_hub: list
     address: str = ""
     status: str = "fail"
     suppressed_by: str = ""

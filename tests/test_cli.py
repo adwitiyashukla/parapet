@@ -97,7 +97,7 @@ def test_rules_listing(capsys, tmp_path):
     listing = json.loads(capsys.readouterr().out)
     assert len(listing) == 46
     assert listing[0]["id"] == "S3-002"
-    assert listing[0]["fsbp"] == ["S3.2", "S3.3"]
+    assert listing[0]["security_hub"] == ["S3.2", "S3.3"]
 
 
 def test_aws_scan_without_credentials_fails_cleanly(monkeypatch, capsys):

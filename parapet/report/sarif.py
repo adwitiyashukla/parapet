@@ -39,12 +39,12 @@ def artifact_uri(result: ScanResult) -> str:
 def rule_descriptor(rule) -> dict:
     tags = ["security", "service/" + rule.id.split("-")[0].lower()]
     tags.extend(f"cis/{item}" for item in rule.cis)
-    tags.extend(f"fsbp/{item}" for item in rule.fsbp)
+    tags.extend(f"securityhub/{item}" for item in rule.security_hub)
     frameworks = []
     if rule.cis:
         frameworks.append("CIS AWS Foundations Benchmark v3.0 " + ", ".join(rule.cis))
-    if rule.fsbp:
-        frameworks.append("AWS Foundational Security Best Practices " + ", ".join(rule.fsbp))
+    if rule.security_hub:
+        frameworks.append("AWS Security Hub controls " + ", ".join(rule.security_hub))
     return {
         "id": rule.id,
         "name": rule.__name__,

@@ -8,7 +8,7 @@ class PublicInvokePolicy(Rule):
     title = "Lambda function can be invoked by anyone"
     severity = Severity.CRITICAL
     resource_types = ("aws_lambda_function",)
-    fsbp = ("Lambda.1",)
+    security_hub = ("Lambda.1",)
     remediation = (
         "Remove permissions with principal * or scope them with source_arn, source_account or principal_org_id."
     )
@@ -46,7 +46,7 @@ class DeprecatedRuntime(Rule):
     title = "Lambda function uses a runtime that no longer receives updates"
     severity = Severity.MEDIUM
     resource_types = ("aws_lambda_function",)
-    fsbp = ("Lambda.2",)
+    security_hub = ("Lambda.2",)
     remediation = "Move the function to a supported runtime version listed in the AWS Lambda runtime table."
 
     def check(self, resource, inventory):

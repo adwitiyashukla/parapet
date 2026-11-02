@@ -7,8 +7,8 @@ class PubliclyAccessible(Rule):
     title = "RDS instance is publicly accessible"
     severity = Severity.CRITICAL
     resource_types = ("aws_db_instance",)
-    cis = ("2.2.3",)
-    fsbp = ("RDS.2",)
+    cis = ("2.3.3",)
+    security_hub = ("RDS.2",)
     remediation = "Set publicly_accessible to false and place the instance in private subnets reachable only from the application tier."
 
     def check(self, resource, inventory):
@@ -25,8 +25,8 @@ class StorageEncrypted(Rule):
     title = "RDS instance storage is not encrypted"
     severity = Severity.HIGH
     resource_types = ("aws_db_instance",)
-    cis = ("2.2.1",)
-    fsbp = ("RDS.3",)
+    cis = ("2.3.1",)
+    security_hub = ("RDS.3",)
     remediation = (
         "Enable storage encryption at creation; an existing instance needs an encrypted snapshot copy and a restore."
     )
@@ -45,7 +45,7 @@ class BackupRetention(Rule):
     title = "RDS instance keeps backups for too few days"
     severity = Severity.MEDIUM
     resource_types = ("aws_db_instance",)
-    fsbp = ("RDS.11",)
+    security_hub = ("RDS.11",)
     remediation = "Set backup_retention_period to at least 7 days so point in time recovery is possible."
 
     def check(self, resource, inventory):
@@ -64,7 +64,7 @@ class DeletionProtection(Rule):
     title = "RDS instance has deletion protection disabled"
     severity = Severity.LOW
     resource_types = ("aws_db_instance",)
-    fsbp = ("RDS.8",)
+    security_hub = ("RDS.8",)
     remediation = "Enable deletion protection so the instance cannot be deleted by a single API call."
 
     def check(self, resource, inventory):
@@ -81,8 +81,8 @@ class AutoMinorVersionUpgrade(Rule):
     title = "RDS instance does not apply minor engine upgrades automatically"
     severity = Severity.LOW
     resource_types = ("aws_db_instance",)
-    cis = ("2.2.2",)
-    fsbp = ("RDS.13",)
+    cis = ("2.3.2",)
+    security_hub = ("RDS.13",)
     remediation = "Enable auto_minor_version_upgrade so security patches in minor engine versions are applied in the maintenance window."
 
     def check(self, resource, inventory):

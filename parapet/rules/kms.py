@@ -8,7 +8,7 @@ class KeyRotation(Rule):
     severity = Severity.MEDIUM
     resource_types = ("aws_kms_key",)
     cis = ("3.6",)
-    fsbp = ("KMS.4",)
+    security_hub = ("KMS.4",)
     remediation = "Enable automatic key rotation on symmetric customer managed keys."
 
     def check(self, resource, inventory):

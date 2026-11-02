@@ -213,3 +213,47 @@ def test_errors_for_missing_or_invalid_plan(tmp_path):
     with pytest.raises(SourceError) as info:
         load_plan(state)
     assert "terraform show -json" in str(info.value)
+
+
+def test_legacy_security_group_rule_and_policy_attachment_are_folded():
+    resources = [
+        change(
+            "aws_security_group.app", "aws_security_group", {"name": "app", "ingress": [], "egress": []}, {"id": True}
+        ),
+        change(
+            "aws_security_group_rule.ssh",
+            "aws_security_group_rule",
+            {"type": "ingress", "from_port": 22, "to_port": 22, "protocol": "tcp", "cidr_blocks": ["0.0.0.0/0"]},
+            {"security_group_id": True},
+        ),
+        change("aws_iam_user.ops", "aws_iam_user", {"name": "ops"}),
+        change(
+            "aws_iam_policy_attachment.ops",
+            "aws_iam_policy_attachment",
+            {"name": "ops", "users": ["ops"], "policy_arn": "arn:aws:iam::aws:policy/AdministratorAccess"},
+        ),
+    ]
+    configuration = [
+        {
+            "address": "aws_security_group_rule.ssh",
+            "expressions": {
+                "security_group_id": {"references": ["aws_security_group.app.id", "aws_security_group.app"]}
+            },
+        },
+    ]
+    inventory = build_inventory(plan_with(resources, configuration), "p")
+    assert sorted(r.type for r in inventory.resources) == ["aws_iam_user", "aws_security_group"]
+    group = inventory.find("aws_security_group", "aws_security_group.app")
+    assert group.attrs["ingress"] == [
+        {
+            "from_port": 22,
+            "to_port": 22,
+            "protocol": "tcp",
+            "cidr_blocks": ["0.0.0.0/0"],
+            "ipv6_cidr_blocks": [],
+            "security_groups": [],
+            "self": False,
+        }
+    ]
+    user = inventory.find("aws_iam_user", "aws_iam_user.ops")
+    assert user.attrs["attached_policy_arns"] == ["arn:aws:iam::aws:policy/AdministratorAccess"]

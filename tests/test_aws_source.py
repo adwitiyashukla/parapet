@@ -14,6 +14,7 @@ from parapet.sources import SourceError
 from parapet.sources.aws import (
     AwsSource,
     make_session,
+    management_coverage,
     normalize_permission,
     parse_credential_report,
 )
@@ -187,11 +188,11 @@ def build_account():
     )
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def inventory():
     with mock_aws():
         build_account()
-        yield AwsSource(make_session(), [REGION], workers=4, label="moto").collect()
+        return AwsSource(make_session(), [REGION], workers=4, label="moto").collect()
 
 
 def test_inventory_shape(inventory):
@@ -433,3 +434,96 @@ def test_normalize_permission_covers_all_sources():
     assert rule["from_port"] is None and rule["protocol"] == "-1"
     assert rule["cidr_blocks"] == ["0.0.0.0/0"] and rule["ipv6_cidr_blocks"] == ["::/0"]
     assert rule["security_groups"] == ["sg-1"] and rule["prefix_list_ids"] == ["pl-1"]
+
+
+def make_trail(region, name, multi_region=True):
+    s3 = boto3.client("s3", region_name=region)
+    bucket = f"{name}-logs"
+    if region == "us-east-1":
+        s3.create_bucket(Bucket=bucket)
+    else:
+        s3.create_bucket(Bucket=bucket, CreateBucketConfiguration={"LocationConstraint": region})
+    client = boto3.client("cloudtrail", region_name=region)
+    client.create_trail(Name=name, S3BucketName=bucket, IsMultiRegionTrail=multi_region, EnableLogFileValidation=True)
+    client.start_logging(Name=name)
+
+
+@mock_aws
+def test_trail_from_unscanned_home_region_is_found():
+    make_trail("us-west-2", "org-trail")
+    inventory = AwsSource(make_session(), ["us-east-1", "eu-west-1"], workers=2).collect()
+    trails = inventory.of_type("aws_cloudtrail")
+    assert [(t.name, t.region) for t in trails] == [("org-trail", "us-west-2")]
+    assert trails[0].attrs["enable_logging"] is True
+    assert "CT-001" not in {f.rule_id for f in run_rules(inventory, Config()).active}
+
+
+@mock_aws
+def test_trail_in_scanned_home_region_is_listed_once():
+    make_trail("us-west-2", "main-trail")
+    make_trail("us-east-1", "local-trail", multi_region=False)
+    inventory = AwsSource(make_session(), ["us-east-1", "us-west-2"], workers=4).collect()
+    trails = sorted((t.name, t.region) for t in inventory.of_type("aws_cloudtrail"))
+    assert trails == [("local-trail", "us-east-1"), ("main-trail", "us-west-2")]
+
+
+@mock_aws
+def test_trail_api_errors_keep_the_trail():
+    make_trail("us-east-1", "main-trail")
+    source = AwsSource(make_session(), ["us-east-1"], workers=1)
+    source.collect()
+    original = source.client
+
+    def client(service, region=None):
+        real = original(service, region)
+        if service == "cloudtrail":
+
+            def denied(**kwargs):
+                raise ClientError({"Error": {"Code": "AccessDenied", "Message": "nope"}}, "GetEventSelectors")
+
+            real.get_event_selectors = denied
+        return real
+
+    source.client = client
+    source.errors = []
+    trails = source.collect_cloudtrail("us-east-1")
+    assert len(trails) == 1
+    assert trails[0].attrs["management_events"] is None
+    assert trails[0].attrs["enable_logging"] is True
+    assert source.errors[0]["service"] == "cloudtrail"
+
+
+def test_management_coverage_from_event_selectors():
+    assert management_coverage({}) == (True, "All")
+    assert management_coverage({"EventSelectors": [{"ReadWriteType": "All", "IncludeManagementEvents": True}]}) == (
+        True,
+        "All",
+    )
+    write_only = {"EventSelectors": [{"ReadWriteType": "WriteOnly", "IncludeManagementEvents": True}]}
+    assert management_coverage(write_only) == (True, "WriteOnly")
+    split = {
+        "EventSelectors": [
+            {"ReadWriteType": "ReadOnly", "IncludeManagementEvents": True},
+            {"ReadWriteType": "WriteOnly", "IncludeManagementEvents": True},
+        ]
+    }
+    assert management_coverage(split) == (True, "All")
+    data_only = {"EventSelectors": [{"ReadWriteType": "All", "IncludeManagementEvents": False}]}
+    assert management_coverage(data_only) == (False, None)
+    advanced = {
+        "AdvancedEventSelectors": [
+            {
+                "FieldSelectors": [
+                    {"Field": "eventCategory", "Equals": ["Management"]},
+                    {"Field": "readOnly", "Equals": ["false"]},
+                ]
+            }
+        ]
+    }
+    assert management_coverage(advanced) == (True, "WriteOnly")
+    advanced_all = {
+        "AdvancedEventSelectors": [{"FieldSelectors": [{"Field": "eventCategory", "Equals": ["Management"]}]}]
+    }
+    assert management_coverage(advanced_all) == (True, "All")
+    data_events = {"AdvancedEventSelectors": [{"FieldSelectors": [{"Field": "eventCategory", "Equals": ["Data"]}]}]}
+    assert management_coverage(data_events) == (False, None)

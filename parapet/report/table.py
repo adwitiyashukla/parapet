@@ -38,7 +38,7 @@ def column_widths(rows: list, width: int) -> list:
         widths.append(min(longest, MAX_WIDTHS.get(column, longest)))
     gaps = 2 * (len(COLUMNS) - 1)
     available = width - gaps - MIN_MESSAGE_WIDTH
-    for index, minimum in ((3, 14), (2, 12)):
+    for index, minimum in ((2, 16), (3, 16), (2, 10), (3, 12)):
         excess = sum(widths) - available
         if excess <= 0:
             break

@@ -19,7 +19,7 @@ class MultiRegionTrail(Rule):
     resource_types = ("aws_account",)
     sources = ("aws",)
     cis = ("3.1",)
-    fsbp = ("CloudTrail.1",)
+    security_hub = ("CloudTrail.1",)
     remediation = "Create one multi-region trail that is logging, includes global service events and records read and write management events."
 
     def evaluate(self, inventory):
@@ -51,7 +51,7 @@ class TrailLogFileValidation(Rule):
     severity = Severity.MEDIUM
     resource_types = ("aws_cloudtrail",)
     cis = ("3.2",)
-    fsbp = ("CloudTrail.4",)
+    security_hub = ("CloudTrail.4",)
     remediation = "Enable log file validation so digest files prove the delivered logs were not changed."
 
     def check(self, resource, inventory):
@@ -69,7 +69,7 @@ class TrailKmsEncryption(Rule):
     severity = Severity.MEDIUM
     resource_types = ("aws_cloudtrail",)
     cis = ("3.5",)
-    fsbp = ("CloudTrail.2",)
+    security_hub = ("CloudTrail.2",)
     remediation = "Set a customer managed KMS key on the trail so log files are encrypted with SSE-KMS."
 
     def check(self, resource, inventory):
@@ -86,7 +86,7 @@ class TrailCloudWatchLogs(Rule):
     title = "CloudTrail trail is not sending logs to CloudWatch Logs"
     severity = Severity.LOW
     resource_types = ("aws_cloudtrail",)
-    fsbp = ("CloudTrail.5",)
+    security_hub = ("CloudTrail.5",)
     remediation = "Connect the trail to a CloudWatch Logs group so metric filters and alarms can watch the events."
 
     def check(self, resource, inventory):

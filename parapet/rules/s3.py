@@ -34,7 +34,7 @@ class BucketPublicAccessBlock(Rule):
     severity = Severity.HIGH
     resource_types = ("aws_s3_bucket",)
     cis = ("2.1.4",)
-    fsbp = ("S3.8",)
+    security_hub = ("S3.8",)
     remediation = "Turn on all four bucket public access block settings: block_public_acls, block_public_policy, ignore_public_acls and restrict_public_buckets."
 
     def check(self, resource, inventory):
@@ -54,7 +54,7 @@ class BucketPolicyPublic(Rule):
     title = "S3 bucket policy grants access to everyone"
     severity = Severity.CRITICAL
     resource_types = ("aws_s3_bucket",)
-    fsbp = ("S3.2", "S3.3")
+    security_hub = ("S3.2", "S3.3")
     remediation = "Remove statements with Principal * from the bucket policy, or restrict them with a condition such as aws:SourceVpce or aws:PrincipalOrgID."
 
     def check(self, resource, inventory):
@@ -75,7 +75,7 @@ class BucketPolicyInsecureTransport(Rule):
     severity = Severity.MEDIUM
     resource_types = ("aws_s3_bucket",)
     cis = ("2.1.1",)
-    fsbp = ("S3.5",)
+    security_hub = ("S3.5",)
     remediation = (
         "Add a Deny statement for all principals and s3:* actions with the condition Bool aws:SecureTransport = false."
     )
@@ -96,7 +96,7 @@ class BucketVersioning(Rule):
     title = "S3 bucket versioning is not enabled"
     severity = Severity.LOW
     resource_types = ("aws_s3_bucket",)
-    fsbp = ("S3.14",)
+    security_hub = ("S3.14",)
     remediation = "Enable versioning on the bucket so overwritten and deleted objects can be recovered."
 
     def check(self, resource, inventory):
@@ -113,7 +113,7 @@ class BucketKmsEncryption(Rule):
     title = "S3 bucket is not encrypted with a KMS key"
     severity = Severity.LOW
     resource_types = ("aws_s3_bucket",)
-    fsbp = ("S3.17",)
+    security_hub = ("S3.17",)
     remediation = "Set the default encryption of the bucket to aws:kms with a customer managed key. Server access log targets are skipped because log delivery only supports SSE-S3."
 
     def check(self, resource, inventory):
@@ -135,7 +135,7 @@ class BucketAccessLogging(Rule):
     title = "S3 bucket has no server access logging"
     severity = Severity.LOW
     resource_types = ("aws_s3_bucket",)
-    fsbp = ("S3.9",)
+    security_hub = ("S3.9",)
     remediation = "Enable server access logging with a separate target bucket. Buckets that are themselves a logging target are skipped."
 
     def check(self, resource, inventory):
@@ -154,7 +154,7 @@ class BucketAclPublic(Rule):
     title = "S3 bucket ACL grants access to everyone"
     severity = Severity.CRITICAL
     resource_types = ("aws_s3_bucket",)
-    fsbp = ("S3.2", "S3.3")
+    security_hub = ("S3.2", "S3.3")
     remediation = "Set the bucket ACL to private and remove grants for AllUsers and AuthenticatedUsers. Prefer bucket owner enforced ownership so ACLs are disabled."
 
     def check(self, resource, inventory):
@@ -181,6 +181,7 @@ class BucketMfaDelete(Rule):
     severity = Severity.LOW
     resource_types = ("aws_s3_bucket",)
     cis = ("2.1.2",)
+    security_hub = ("S3.20",)
     remediation = (
         "Enable MFA delete on the versioning configuration using the root account credentials and an MFA device."
     )
@@ -200,7 +201,8 @@ class AccountPublicAccessBlock(Rule):
     title = "Account level S3 public access block is not fully enabled"
     severity = Severity.HIGH
     resource_types = ("aws_s3_account_public_access_block",)
-    fsbp = ("S3.1",)
+    cis = ("2.1.4",)
+    security_hub = ("S3.1",)
     remediation = (
         "Enable all four account level public access block settings so no bucket in the account can be made public."
     )

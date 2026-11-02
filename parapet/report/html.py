@@ -152,8 +152,8 @@ def render_html(result: ScanResult) -> str:
         frameworks = []
         if finding.cis:
             frameworks.append("CIS " + ", ".join(finding.cis))
-        if finding.fsbp:
-            frameworks.append("FSBP " + ", ".join(finding.fsbp))
+        if finding.security_hub:
+            frameworks.append("Security Hub " + ", ".join(finding.security_hub))
         rows.append(
             f'<tr data-sev="{finding.severity.label}">'
             f'<td><span class="sev {finding.severity.label}">{finding.severity.label}</span></td>'

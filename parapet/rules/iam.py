@@ -44,7 +44,7 @@ class RootAccessKeys(Rule):
     resource_types = ("aws_account",)
     sources = ("aws",)
     cis = ("1.4",)
-    fsbp = ("IAM.4",)
+    security_hub = ("IAM.4",)
     remediation = "Delete the access keys of the root user and use IAM roles for programmatic access."
 
     def check(self, resource, inventory):
@@ -63,7 +63,7 @@ class RootMfa(Rule):
     resource_types = ("aws_account",)
     sources = ("aws",)
     cis = ("1.5",)
-    fsbp = ("IAM.9",)
+    security_hub = ("IAM.9",)
     remediation = "Register a hardware or virtual MFA device for the root user."
 
     def check(self, resource, inventory):
@@ -81,7 +81,7 @@ class PasswordLength(Rule):
     severity = Severity.MEDIUM
     resource_types = ("aws_iam_account_password_policy",)
     cis = ("1.8",)
-    fsbp = ("IAM.7",)
+    security_hub = ("IAM.7", "IAM.15")
     remediation = "Set the account password policy minimum length to 14 characters or more."
 
     def check(self, resource, inventory):
@@ -102,7 +102,7 @@ class PasswordReuse(Rule):
     severity = Severity.LOW
     resource_types = ("aws_iam_account_password_policy",)
     cis = ("1.9",)
-    fsbp = ("IAM.7",)
+    security_hub = ("IAM.7", "IAM.16")
     remediation = "Set password reuse prevention to remember the last 24 passwords."
 
     def check(self, resource, inventory):
@@ -124,7 +124,7 @@ class ConsoleUserWithoutMfa(Rule):
     resource_types = ("aws_iam_user",)
     sources = ("aws",)
     cis = ("1.10",)
-    fsbp = ("IAM.5",)
+    security_hub = ("IAM.5",)
     remediation = "Require an MFA device for every user with a console password, or remove the password."
 
     def check(self, resource, inventory):
@@ -142,7 +142,7 @@ class AccessKeyRotation(Rule):
     resource_types = ("aws_iam_user",)
     sources = ("aws",)
     cis = ("1.14",)
-    fsbp = ("IAM.3",)
+    security_hub = ("IAM.3",)
     remediation = "Rotate access keys at least every 90 days and delete the old key after the new one is in use."
 
     def check(self, resource, inventory):
@@ -169,7 +169,7 @@ class UnusedCredentials(Rule):
     resource_types = ("aws_iam_user",)
     sources = ("aws",)
     cis = ("1.12",)
-    fsbp = ("IAM.8",)
+    security_hub = ("IAM.8", "IAM.22")
     remediation = "Disable or delete passwords and access keys that have not been used within the allowed window."
 
     def check(self, resource, inventory):
@@ -221,7 +221,7 @@ class UserDirectPolicies(Rule):
     severity = Severity.LOW
     resource_types = ("aws_iam_user",)
     cis = ("1.15",)
-    fsbp = ("IAM.2",)
+    security_hub = ("IAM.2",)
     remediation = "Attach policies to groups and add users to groups instead of attaching policies to users."
 
     def check(self, resource, inventory):
@@ -238,7 +238,7 @@ class FullAdminPolicy(Rule):
     severity = Severity.HIGH
     resource_types = ("aws_iam_policy", *PRINCIPAL_TYPES)
     cis = ("1.16",)
-    fsbp = ("IAM.1",)
+    security_hub = ("IAM.1",)
     remediation = "Replace Action * on Resource * with the specific actions and resources the principal needs."
 
     def check(self, resource, inventory):
@@ -262,7 +262,7 @@ class ServiceWildcardPolicy(Rule):
     title = "IAM policy grants wildcard actions for a whole service"
     severity = Severity.MEDIUM
     resource_types = ("aws_iam_policy", *PRINCIPAL_TYPES)
-    fsbp = ("IAM.21",)
+    security_hub = ("IAM.21",)
     remediation = "List the individual actions that are needed instead of service:* wildcards."
 
     def check(self, resource, inventory):

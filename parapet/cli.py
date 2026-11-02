@@ -139,11 +139,11 @@ def run_rules_listing(args) -> int:
     if args.json:
         print(json.dumps([rule.describe() for rule in rules], indent=2))
         return 0
-    print(f"{'ID':11} {'SEVERITY':9} {'SOURCES':14} {'CIS':12} {'FSBP':22} TITLE")
+    print(f"{'ID':11} {'SEVERITY':9} {'SOURCES':14} {'CIS':12} {'SECURITY HUB':22} TITLE")
     for rule in rules:
         print(
             f"{rule.id:11} {rule.severity.label:9} {'+'.join(rule.sources):14} "
-            f"{', '.join(rule.cis):12} {', '.join(rule.fsbp):22} {rule.title}"
+            f"{', '.join(rule.cis):12} {', '.join(rule.security_hub):22} {rule.title}"
         )
     print(
         f"\n{len(rules)} rules"

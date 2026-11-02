@@ -88,6 +88,30 @@ def normalize_permission(permission: dict) -> dict:
     }
 
 
+def management_coverage(selectors: dict) -> tuple:
+    basic = selectors.get("EventSelectors") or []
+    advanced = selectors.get("AdvancedEventSelectors") or []
+    if not basic and not advanced:
+        return True, "All"
+    kinds = set()
+    for selector in basic:
+        if selector.get("IncludeManagementEvents", True):
+            kinds.add(selector.get("ReadWriteType", "All"))
+    for selector in advanced:
+        fields = {f.get("Field"): f for f in selector.get("FieldSelectors", [])}
+        if "Management" not in fields.get("eventCategory", {}).get("Equals", []):
+            continue
+        read_only = fields.get("readOnly", {}).get("Equals") or []
+        kinds.add(
+            {"true": "ReadOnly", "false": "WriteOnly"}.get(str(read_only[0]).lower(), "All") if read_only else "All"
+        )
+    if not kinds:
+        return False, None
+    if "All" in kinds or {"ReadOnly", "WriteOnly"} <= kinds:
+        return True, "All"
+    return True, kinds.pop()
+
+
 class AwsSource:
     def __init__(self, session, regions: list, workers: int = 8, label: str = ""):
         self.session = session
@@ -95,6 +119,7 @@ class AwsSource:
         self.workers = max(1, workers)
         self.label = label
         self.account_id = ""
+        self.regions = list(regions)
         self.errors = []
         self._lock = threading.Lock()
         self._boto_config = BotoConfig(retries={"max_attempts": 8, "mode": "standard"}, user_agent_extra="parapet")
@@ -113,6 +138,7 @@ class AwsSource:
             regions = self.resolve_regions()
         except (ClientError, BotoCoreError) as exc:
             raise SourceError(f"could not connect to AWS: {exc}") from None
+        self.regions = regions
         inventory = Inventory(
             source="aws", origin=self.label or "default credentials", account_id=self.account_id, regions=regions
         )
@@ -136,7 +162,10 @@ class AwsSource:
                     inventory.resources.extend(future.result())
                 except (ClientError, BotoCoreError) as exc:
                     self.record_error(service, region, exc)
-        inventory.resources.sort(key=lambda r: (r.type, r.region, r.id))
+        unique = {}
+        for resource in inventory.resources:
+            unique.setdefault((resource.type, resource.region, resource.arn or resource.id), resource)
+        inventory.resources = sorted(unique.values(), key=lambda r: (r.type, r.region, r.id))
         inventory.errors = sorted(self.errors, key=lambda e: (e["service"], e["region"]))
         return inventory
 
@@ -575,49 +604,39 @@ class AwsSource:
     def collect_cloudtrail(self, region) -> list:
         cloudtrail = self.client("cloudtrail", region)
         resources = []
-        for trail in cloudtrail.describe_trails(includeShadowTrails=False)["trailList"]:
-            if trail.get("HomeRegion") and trail["HomeRegion"] != region:
+        for trail in cloudtrail.describe_trails(includeShadowTrails=True)["trailList"]:
+            home = trail.get("HomeRegion") or region
+            if home != region and home in self.regions:
                 continue
-            arn = trail["TrailARN"]
-            status = cloudtrail.get_trail_status(Name=arn)
-            selectors = cloudtrail.get_event_selectors(TrailName=arn)
-            management = not selectors.get("EventSelectors") and not selectors.get("AdvancedEventSelectors")
-            read_write = "All" if management else None
-            for selector in selectors.get("EventSelectors", []):
-                if selector.get("IncludeManagementEvents", True):
-                    management = True
-                    read_write = selector.get("ReadWriteType", "All")
-            for selector in selectors.get("AdvancedEventSelectors", []):
-                fields = {f.get("Field"): f for f in selector.get("FieldSelectors", [])}
-                if "Management" in fields.get("eventCategory", {}).get("Equals", []):
-                    management = True
-                    read_only = fields.get("readOnly", {}).get("Equals")
-                    read_write = (
-                        {"true": "ReadOnly", "false": "WriteOnly"}.get(read_only[0], "All") if read_only else "All"
-                    )
-            resources.append(
-                Resource(
-                    type="aws_cloudtrail",
-                    id=trail["Name"],
-                    region=region,
-                    name=trail["Name"],
-                    arn=arn,
-                    attrs={
-                        "name": trail["Name"],
-                        "s3_bucket_name": trail.get("S3BucketName"),
-                        "is_multi_region_trail": trail.get("IsMultiRegionTrail", False),
-                        "is_organization_trail": trail.get("IsOrganizationTrail", False),
-                        "include_global_service_events": trail.get("IncludeGlobalServiceEvents", False),
-                        "enable_log_file_validation": trail.get("LogFileValidationEnabled", False),
-                        "kms_key_id": trail.get("KmsKeyId"),
-                        "cloud_watch_logs_group_arn": trail.get("CloudWatchLogsLogGroupArn"),
-                        "enable_logging": status.get("IsLogging", False),
-                        "management_events": management,
-                        "read_write_type": read_write,
-                    },
-                )
-            )
+            resources.append(self.trail_resource(trail, home))
         return resources
+
+    def trail_resource(self, trail: dict, home: str) -> Resource:
+        arn = trail["TrailARN"]
+        client = self.client("cloudtrail", home)
+        attrs = {
+            "name": trail["Name"],
+            "s3_bucket_name": trail.get("S3BucketName"),
+            "is_multi_region_trail": trail.get("IsMultiRegionTrail", False),
+            "is_organization_trail": trail.get("IsOrganizationTrail", False),
+            "include_global_service_events": trail.get("IncludeGlobalServiceEvents", False),
+            "enable_log_file_validation": trail.get("LogFileValidationEnabled", False),
+            "kms_key_id": trail.get("KmsKeyId"),
+            "cloud_watch_logs_group_arn": trail.get("CloudWatchLogsLogGroupArn"),
+            "enable_logging": None,
+            "management_events": None,
+            "read_write_type": None,
+        }
+        try:
+            attrs["enable_logging"] = client.get_trail_status(Name=arn).get("IsLogging", False)
+        except ClientError as exc:
+            self.record_error("cloudtrail", home, exc)
+        try:
+            coverage = management_coverage(client.get_event_selectors(TrailName=arn))
+            attrs["management_events"], attrs["read_write_type"] = coverage
+        except ClientError as exc:
+            self.record_error("cloudtrail", home, exc)
+        return Resource(type="aws_cloudtrail", id=trail["Name"], region=home, name=trail["Name"], arn=arn, attrs=attrs)
 
     def collect_lambda(self, region) -> list:
         client = self.client("lambda", region)

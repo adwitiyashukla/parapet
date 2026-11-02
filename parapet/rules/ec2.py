@@ -79,7 +79,7 @@ class AdminPortsOpen(Rule):
     severity = Severity.HIGH
     resource_types = SECURITY_GROUP_TYPES
     cis = ("5.2", "5.3")
-    fsbp = ("EC2.13", "EC2.14")
+    security_hub = ("EC2.53", "EC2.54")
     remediation = "Remove 0.0.0.0/0 and ::/0 from SSH and RDP ingress rules; use a VPN, a bastion with a fixed source range, or Session Manager."
 
     def check(self, resource, inventory):
@@ -94,7 +94,7 @@ class AllTrafficOpen(Rule):
     title = "Security group allows all traffic from the internet"
     severity = Severity.CRITICAL
     resource_types = SECURITY_GROUP_TYPES
-    fsbp = ("EC2.18",)
+    security_hub = ("EC2.18", "EC2.19")
     remediation = (
         "Replace the all-protocol or all-port ingress rule with rules for the exact ports and source ranges needed."
     )
@@ -114,7 +114,7 @@ class DatabasePortsOpen(Rule):
     title = "Security group exposes a database port to the internet"
     severity = Severity.HIGH
     resource_types = SECURITY_GROUP_TYPES
-    fsbp = ("EC2.19",)
+    security_hub = ("EC2.19",)
     remediation = "Allow database ports only from application security groups or private CIDR ranges."
 
     def check(self, resource, inventory):
@@ -129,7 +129,7 @@ class UnexpectedPortsOpen(Rule):
     title = "Security group allows unrestricted ingress on an unexpected port"
     severity = Severity.MEDIUM
     resource_types = SECURITY_GROUP_TYPES
-    fsbp = ("EC2.18",)
+    security_hub = ("EC2.18",)
     remediation = "Limit internet facing ingress to the ports listed in public_ports_allowed, usually 80 and 443, and restrict everything else by source."
 
     def check(self, resource, inventory):
@@ -156,7 +156,7 @@ class DefaultSecurityGroupInUse(Rule):
     severity = Severity.MEDIUM
     resource_types = ("aws_default_security_group",)
     cis = ("5.4",)
-    fsbp = ("EC2.2",)
+    security_hub = ("EC2.2",)
     remediation = "Remove every ingress and egress rule from the default security group and attach purpose built groups to resources instead."
 
     def check(self, resource, inventory):
@@ -176,7 +176,7 @@ class VpcFlowLogs(Rule):
     severity = Severity.MEDIUM
     resource_types = ("aws_vpc",)
     cis = ("3.7",)
-    fsbp = ("EC2.6",)
+    security_hub = ("EC2.6",)
     remediation = "Create a flow log for the VPC that captures ALL traffic to CloudWatch Logs or S3."
 
     def check(self, resource, inventory):
@@ -193,7 +193,8 @@ class EbsDefaultEncryption(Rule):
     title = "EBS encryption by default is disabled"
     severity = Severity.MEDIUM
     resource_types = ("aws_ebs_encryption_by_default",)
-    fsbp = ("EC2.7",)
+    cis = ("2.2.1",)
+    security_hub = ("EC2.7",)
     remediation = "Enable EBS encryption by default in every region so new volumes are encrypted automatically."
 
     def check(self, resource, inventory):
@@ -210,7 +211,7 @@ class EbsVolumeEncrypted(Rule):
     title = "EBS volume is not encrypted"
     severity = Severity.MEDIUM
     resource_types = ("aws_ebs_volume",)
-    fsbp = ("EC2.3",)
+    security_hub = ("EC2.3",)
     remediation = "Create volumes with encryption enabled; existing volumes need a snapshot copied with encryption and a new volume from it."
 
     def check(self, resource, inventory):
@@ -228,7 +229,7 @@ class InstanceImdsV2(Rule):
     severity = Severity.HIGH
     resource_types = ("aws_instance",)
     cis = ("5.6",)
-    fsbp = ("EC2.8",)
+    security_hub = ("EC2.8",)
     remediation = "Set metadata_options http_tokens to required so the instance metadata service only answers IMDSv2 session requests."
 
     def check(self, resource, inventory):
@@ -253,7 +254,7 @@ class InstancePublicIp(Rule):
     title = "EC2 instance has a public IP address"
     severity = Severity.LOW
     resource_types = ("aws_instance",)
-    fsbp = ("EC2.9",)
+    security_hub = ("EC2.9",)
     remediation = (
         "Launch instances in private subnets behind a load balancer or NAT gateway instead of assigning public IPs."
     )
@@ -273,7 +274,7 @@ class InstanceVolumesEncrypted(Rule):
     severity = Severity.MEDIUM
     resource_types = ("aws_instance",)
     sources = ("terraform",)
-    fsbp = ("EC2.3",)
+    security_hub = ("EC2.3",)
     remediation = (
         "Set encrypted = true on root_block_device and every ebs_block_device, or rely on EBS encryption by default."
     )
