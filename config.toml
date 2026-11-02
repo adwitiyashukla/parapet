@@ -1,0 +1,32 @@
+[scan]
+regions = ["us-east-1"]
+workers = 8
+fail_on = "high"
+profile = ""
+
+[rules]
+disabled = []
+access_key_max_age_days = 90
+unused_credential_days = 45
+password_min_length = 14
+password_reuse_prevention = 24
+backup_retention_min_days = 7
+admin_ports = [22, 3389]
+database_ports = [1433, 1521, 3306, 5432, 6379, 9200, 27017]
+public_ports_allowed = [80, 443]
+deprecated_lambda_runtimes = [
+  "python3.8",
+  "python3.9",
+  "nodejs16.x",
+  "nodejs18.x",
+  "go1.x",
+  "dotnet6",
+  "dotnetcore3.1",
+  "java8",
+  "ruby2.7",
+  "ruby3.2",
+  "provided",
+]
+
+[report]
+width = 0

@@ -1,0 +1,16 @@
+__pycache__/
+*.pyc
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.venv/
+.terraform/
+.terraform.lock.hcl
+tfplan
+*.tfplan
+results.json
+results.sarif
+report.html
+baseline.json
+.ruff_cache/
